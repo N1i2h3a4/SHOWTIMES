@@ -15,7 +15,7 @@ SELECT * FROM m_table;
 
 
 CREATE or replace TABLE details (
-  id INT PRIMARY KEY,
+  id INT ,
   language VARCHAR(255),
   title VARCHAR(255),
   director VARCHAR(255),
@@ -27,12 +27,12 @@ CREATE or replace TABLE details (
 INSERT INTO details (id, language, title, director, tagline, cast, storyline)
 SELECT 
   j_d:id::INT,
-  j_d:language::VARCHAR,
-  j_d:title::VARCHAR,
-  j_d:director::VARCHAR,
-  j_d:tagline::VARCHAR,
-  j_d:cast::VARCHAR,
-  j_d:storyline::STRING
+  j_d:details[0]:language::VARCHAR,
+  j_d:details[0]:title::VARCHAR,
+  j_d:details[0]:director::VARCHAR,
+  j_d:details[0]:tagline::VARCHAR,
+  j_d:details[0]:cast::VARCHAR,
+  j_d:details[0]:storyline::STRING
 FROM raw_tab;
 select * from details;
 
@@ -107,8 +107,8 @@ SELECT
   j_d:images[0]:type::VARCHAR
   
 FROM raw_tab ;
-select * from images;
 
+select * from images;
 
 CREATE  or replace TABLE feeders (
   id INT,
