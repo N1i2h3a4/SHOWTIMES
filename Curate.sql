@@ -94,36 +94,36 @@ SELECT
 FROM raw_tab;
 select * from fav_movie;
 
-
 CREATE  or replace TABLE images ( 
-  id INT PRIMARY KEY,
+  id INT,
   order_n INT,
-  url VARCHAR(255),
-  type VARCHAR(255),
-  thumbnail VARCHAR(255),
-  collection_id INT,
-  FOREIGN KEY (collection_id) REFERENCES collections(id)
+  type VARCHAR(255)
 );
-INSERT INTO images (id,order_n, url, type, thumbnail, collection_id)
+
+INSERT INTO images (id,order_n, type)
 SELECT 
-  j_d:id::INT,
-  j_d:order::INT,
-  j_d:url::VARCHAR,
-  j_d:type::VARCHAR,
-  j_d:thumbnail::VARCHAR,
-  j_d:collection_id::INT
+  j_d:images[0]:id::INT,
+  j_d:images[0]:order::INT,
+  j_d:images[0]:type::VARCHAR
+  
 FROM raw_tab ;
 select * from images;
 
+
 CREATE  or replace TABLE feeders (
   id INT,
-  name VARCHAR(255),
-  url VARCHAR(255)
+  name1 VARCHAR(255),
+  url1 VARCHAR(255),
+  name2 VARCHAR(255),
+  url2 VARCHAR(255)
 );
-INSERT INTO feeders (id, name, url)
+INSERT INTO feeders (id, name1, url1 , name2, url2)
 SELECT 
   j_d:id::INT,
-  j_d:name::INT,
-  j_d:url::VARCHAR
+  j_d:feeders[0]:name::VARCHAR,
+  j_d:feeders[0]:url::VARCHAR,
+  j_d:feeders[1]:name::VARCHAR,
+  j_d:feeders[1]:url::VARCHAR
   FROM raw_tab ;
+  
 select * from feeders;
