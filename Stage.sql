@@ -3,6 +3,8 @@ create or replace database ingest_data;
 use database ingest_data;
 create schema ing;
 
+
+
 create or replace table ing.organize_json(json_data VARIANT);
 
 CREATE STAGE my_stage
