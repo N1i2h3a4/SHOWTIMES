@@ -8,6 +8,7 @@ FROM m_table m
 GROUP BY year, month;
 
 
+
 #Trend of the movie count release in english only per month/year
 
 SELECT
