@@ -1,5 +1,5 @@
 
-create schema ingest;
+create  or replace schema ingest;
 use schema ingest;
 
 
@@ -10,14 +10,14 @@ CREATE or replace TABLE ingest.m_table (
   release_date DATE
 );
 
-INSERT INTO m_table (id, title, language, release_date)
+INSERT INTO ingest.m_table (id, title, language, release_date)
 SELECT 
   j_d:id::INT,
   j_d:title::VARCHAR,
   j_d:language::VARCHAR,
   j_d:release_date::DATE
-FROM raw_tab;
-SELECT * FROM m_table;
+FROM ing.raw_tab;
+SELECT * FROM ingest.m_table;
 -------------------------------------------------------
 
 CREATE or replace TABLE ingest.details (
@@ -112,7 +112,7 @@ SELECT
   j_d:images[0]:order::INT,
   j_d:images[0]:type::VARCHAR
   
-FROM raw_tab ;
+FROM ing.raw_tab ;
 
 select * from ingest.images;
 -----------------------------------------------------------------------------------------------------
@@ -130,6 +130,6 @@ SELECT
   j_d:feeders[0]:url::VARCHAR,
   j_d:feeders[1]:name::VARCHAR,
   j_d:feeders[1]:url::VARCHAR
-  FROM raw_tab ;
+  FROM ing.raw_tab ;
   
 select * from ingest.feeders;
