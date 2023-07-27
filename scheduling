@@ -1,0 +1,136 @@
+
+CREATE OR REPLACE PIPE  snowpipe_showtimes
+AUTO_INGEST = TRUE
+AS
+COPY INTO organize_json
+FROM @my_stage
+FILE_FORMAT = (TYPE = 'JSON');
+ ALTER PIPE snowpipe_showtimes REFRESH;
+
+CREATE OR REPLACE STREAM raw_stream ON TABLE organize_json;
+
+CREATE OR REPLACE TASK task_show
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream')
+AS
+INSERT INTO raw_tab(j_d)
+SELECT VALUE json_data
+FROM organize_json,
+LATERAL FLATTEN(input => parse_json(organize_json.json_data:results));
+
+
+
+CREATE OR REPLACE STREAM raw_stream1 ON TABLE raw_tab;
+
+CREATE OR REPLACE TASK task_show1
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO m_table (id, title, language, release_date)
+SELECT 
+  j_d:id::INT, j_d:title::VARCHAR,j_d:language::VARCHAR,j_d:release_date::DATE
+FROM ing.raw_tab;
+
+-------------------------------------------------------
+
+CREATE OR REPLACE TASK task_show2
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO details (id, language, title, director, tagline, cast, storyline)
+SELECT 
+  j_d:id::INT,j_d:details[0]:language::VARCHAR,j_d:details[0]:title::VARCHAR,j_d:details[0]:director::VARCHAR,j_d:details[0]:tagline::VARCHAR,j_d:details[0]:cast::VARCHAR,j_d:details[0]:storyline::STRING
+FROM ing.raw_tab;
+
+-----------------------------------------------------------------------
+
+CREATE OR REPLACE TASK task_show3
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO collections (id, name, slug, movies, watches, duration, active_screens)
+SELECT 
+  j_d:collections[0]:id::INT,
+  j_d:collections[0]:name::VARCHAR,
+  j_d:collections[0]:slug::VARCHAR,
+  j_d:collections[0]:movies::VARCHAR,
+  j_d:watches::INT,
+  j_d:duration::INT,
+  j_d:active_screens::INT
+FROM ing.raw_tab;
+
+
+---------------------------------------------------------------------
+CREATE OR REPLACE TASK task_show4
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO ingest.vote_score (id, avg, score, total)
+SELECT 
+  j_d: id::INT,
+  j_d:vote_score:avg::INT,
+  j_d:vote_score:score::INT,
+  j_d:vote_score:total::INT
+FROM ing.raw_tab;
+
+---------------------------------------------------------------------
+CREATE OR REPLACE TASK task_show5
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO ingest.fav_movie (id, star, follow, watched, stars)
+SELECT 
+  j_d:id::INT,
+  j_d:fav_movie:star::BOOLEAN,
+  j_d:fav_movie:follow::BOOLEAN,
+  j_d:fav_movie:watched::BOOLEAN,
+  j_d:stars::INT
+FROM ing.raw_tab;
+
+-------------------------------------------------------------------------------------------
+CREATE OR REPLACE TASK task_show6
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO ingest.images (id,order_n, type)
+SELECT 
+  j_d:images[0]:id::INT,
+  j_d:images[0]:order::INT,
+  j_d:images[0]:type::VARCHAR
+  
+FROM ing.raw_tab ;
+
+-----------------------------------------------------------------------------------------------------
+CREATE OR REPLACE TASK task_show7
+WAREHOUSE = compute_wh
+SCHEDULE = '2 minute'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_stream1')
+AS
+INSERT INTO ingest.feeders (id, name1, url1 , name2, url2)
+SELECT 
+  j_d:id::INT,
+  j_d:feeders[0]:name::VARCHAR,
+  j_d:feeders[0]:url::VARCHAR,
+  j_d:feeders[1]:name::VARCHAR,
+  j_d:feeders[1]:url::VARCHAR
+  FROM ing.raw_tab ;
+  
+
+
+ALTER TASK task_show RESUME;
+ALTER TASK task_show1 RESUME;
+ALTER TASK task_show2 RESUME;
+ALTER TASK task_show3 RESUME;
+ALTER TASK task_show4 RESUME;
+ALTER TASK task_show5 RESUME;
+ALTER TASK task_show6 RESUME;
+ALTER TASK task_show7 RESUME;
+
+
